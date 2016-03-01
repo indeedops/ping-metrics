@@ -9,25 +9,12 @@ try:
 except ImportError:
     from datadog import statsd
 
+import ConfigParser
 import argparse
 import multiprocessing
 import socket
 import subprocess
 
-# first parameter is a friendly name, second is the hostname or ip
-POOL = [
-        ['dal-log2-fe', 'dal-log2-fe.indeed.net'],
-        ['hkg-log1-fe', 'hkg-log1-fe.indeed.net'],
-        ['iad-gensvc1-fe', 'iad-gensvc1-fe.indeed.net'],
-        ['lon-log1-fe', 'lon-log1-fe.indeed.net'],
-        ['lucymaster-fe', 'lucymaster-fe.ausprod.indeed.net'],
-        ['mtvoff-fw1-fe', 'mtvoff-fw1-fe.mtvoff.indeed.net'],
-        ['ord-gensvc1-fe', 'ord-gensvc1-fe.indeed.net'],
-        ['sjc-gensvc1-fe', 'sjc-gensvc1-fe.indeed.net'],
-        ['stmoff-fw1-fe', 'stmoff-fw1-fe.stmoff.indeed.net'],
-        ['syd-svc3-fe', 'syd-svc3-fe.indeed.net'],
-        ['sao-log1-fe', 'sao-log1-fe.saoprod.indeed.net'],
-    ]
 
 class PingMetric(object):
     """
@@ -113,5 +100,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
     parser.add_argument('-d', '--debug', help='Print the output to stdout',
         action='store_true')
-    ping_metric = PingMetric(POOL)
+    # Read the config file
+    config = ConfigParser.ConfigParser()
+    config.read('config.ini')
+    pool = []
+    for name, hostname in config.items('Pool'):
+        pool.append([name, hostname])
+    # Start the app
+    ping_metric = PingMetric(pool)
     ping_metric.run()
