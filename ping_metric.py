@@ -5,7 +5,7 @@
 #
 
 try:
-    import statsd
+    from statsd import statsd
 except ImportError:
     from datadog import statsd
 
