@@ -20,9 +20,10 @@ class PingMetric(object):
     """
     Class to ping given pool of hosts and emit metrics to statsd (DataDog)
     """
-    def __init__(self, pool):
+    def __init__(self, pool, debug=False):
         self.origin = socket.gethostname()
         self.pool = pool
+        self.debug = debug
     
     def run(self):
         """
@@ -33,7 +34,8 @@ class PingMetric(object):
             p = multiprocessing.Process(target=self._worker, args=(i[0],i[1]))
             jobs.append(p)
             p.start()
-            print 'thread started for: ' + i[0] + ' (' + i[1] + ')'
+            if self.debug:
+                print 'thread started for: ' + i[0] + ' (' + i[1] + ')'
     
     def _worker(self, name, ip):
         """
@@ -51,7 +53,8 @@ class PingMetric(object):
                 var = subprocess.check_output('ping -q -c 5 -t 20 ' + ip,
                                               shell=True).splitlines(True)
             except KeyboardInterrupt:
-                print 'died'
+                if self.debug:
+                    print 'died'
                 return 0
             except:
                 (var, min, avg, max, jitter, loss) = ('', '', '', '', '', '')
@@ -72,7 +75,8 @@ class PingMetric(object):
     
             if len(var) > 0 and len(min) > 0 and len(avg) > 0 \
                     and len(max) > 0 and len(jitter) > 0 and len(loss) > 0:
-                print ip, min, avg, max, jitter, loss
+                if self.debug:
+                    print ip, min, avg, max, jitter, loss
                 statsd.gauge('testping.min', min, tags=self._tags(ip, name))
                 statsd.gauge('testping.max', max, tags=self._tags(ip, name))
                 statsd.gauge('testping.avg', avg, tags=self._tags(ip, name))
@@ -80,7 +84,8 @@ class PingMetric(object):
                                                                        name))
                 statsd.gauge('testping.loss', loss, tags=self._tags(ip, name))
             else:
-                print 'no data for', ip
+                if self.debug:
+                    print 'no data for', ip
                 statsd.gauge('testping.loss', '100', tags=self._tags(ip, name))
 
 
@@ -100,12 +105,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
     parser.add_argument('-d', '--debug', help='Print the output to stdout',
         action='store_true')
-    # Read the config file
+    args = parser.parse_args()
+    # Read the config file and get the pool of servers
     config = ConfigParser.ConfigParser()
     config.read('config.ini')
     pool = []
     for name, hostname in config.items('Pool'):
         pool.append([name, hostname])
     # Start the app
-    ping_metric = PingMetric(pool)
+    ping_metric = PingMetric(pool, **vars(args))
     ping_metric.run()
