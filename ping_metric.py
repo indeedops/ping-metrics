@@ -103,7 +103,7 @@ class PingMetric(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
-    parser.add_argument('-s', '--silent', help="don't print anything to stdout",
+    parser.add_argument('-s', '--silent', help="supress output to stdout",
         action='store_false')
     args = parser.parse_args()
     # Read the config file and get the pool of servers
