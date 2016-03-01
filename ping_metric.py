@@ -20,10 +20,10 @@ class PingMetric(object):
     """
     Class to ping given pool of hosts and emit metrics to statsd (DataDog)
     """
-    def __init__(self, pool, debug=False):
+    def __init__(self, pool, silent=True):
         self.origin = socket.gethostname()
         self.pool = pool
-        self.debug = debug
+        self.silent = silent
     
     def run(self):
         """
@@ -34,7 +34,7 @@ class PingMetric(object):
             p = multiprocessing.Process(target=self._worker, args=(i[0],i[1]))
             jobs.append(p)
             p.start()
-            if self.debug:
+            if self.silent:
                 print 'thread started for: ' + i[0] + ' (' + i[1] + ')'
     
     def _worker(self, name, ip):
@@ -53,7 +53,7 @@ class PingMetric(object):
                 var = subprocess.check_output('ping -q -c 5 -t 20 ' + ip,
                                               shell=True).splitlines(True)
             except KeyboardInterrupt:
-                if self.debug:
+                if self.silent:
                     print 'died'
                 return 0
             except:
@@ -75,7 +75,7 @@ class PingMetric(object):
     
             if len(var) > 0 and len(min) > 0 and len(avg) > 0 \
                     and len(max) > 0 and len(jitter) > 0 and len(loss) > 0:
-                if self.debug:
+                if self.silent:
                     print ip, min, avg, max, jitter, loss
                 statsd.gauge('testping.min', min, tags=self._tags(ip, name))
                 statsd.gauge('testping.max', max, tags=self._tags(ip, name))
@@ -84,7 +84,7 @@ class PingMetric(object):
                                                                        name))
                 statsd.gauge('testping.loss', loss, tags=self._tags(ip, name))
             else:
-                if self.debug:
+                if self.silent:
                     print 'no data for', ip
                 statsd.gauge('testping.loss', '100', tags=self._tags(ip, name))
 
@@ -103,8 +103,8 @@ class PingMetric(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
-    parser.add_argument('-d', '--debug', help='Print the output to stdout',
-        action='store_true')
+    parser.add_argument('-s', '--silent', help="don't print anything to stdout",
+        action='store_false')
     args = parser.parse_args()
     # Read the config file and get the pool of servers
     config = ConfigParser.ConfigParser()
