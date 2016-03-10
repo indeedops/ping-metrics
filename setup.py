@@ -20,10 +20,10 @@ setup(name='cross-dc-metrics',
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        'datadog>=0.10.0',
-        'decorator',
-        'requests',
-        'simplejson',
+        'dogstatsd-python',
+        'python-decorator',
+        'python-requests',
+        'python-simplejson',
     ],
     entry_points={
         'console_scripts': [
