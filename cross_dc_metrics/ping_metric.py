@@ -108,7 +108,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # Read the config file and get the pool of servers
     config = ConfigParser.ConfigParser()
-    config.read('config.ini')
+    try:
+        config.read('/etc/cross_dc_metrics/config.ini')
+    except ImportError:
+        config.read('config.ini')
     pool = []
     for name, hostname in config.items('Pool'):
         pool.append([name, hostname])
