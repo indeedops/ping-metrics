@@ -1,10 +1,13 @@
-#!/usr/bin/env python
+#!/opt/datadog-agent/embedded/bin/python
 #
 # Original code was taken from
 # https://gist.github.com/nambrosch/13679710eca4a268f775
 #
 
-from datadog import statsd
+try:
+    from statsd import statsd
+except ImportError:
+    from datadog import statsd
 
 import ConfigParser
 import argparse

@@ -25,7 +25,7 @@ setup(name='cross-dc-metrics',
     ],
     entry_points={
         'console_scripts': [
-            'cross_dc_metrics=cross_dc_metrics.ping_metric:main',
+            'cross_dc_metrics=cross_dc_metrics.__main__:main',
         ],
     },
     data_files=[
