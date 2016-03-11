@@ -21,9 +21,6 @@ setup(name='cross-dc-metrics',
     zip_safe=False,
     install_requires=[
         'dogstatsd-python',
-        'python-decorator',
-        'python-requests',
-        'python-simplejson',
     ],
     entry_points={
         'console_scripts': [
