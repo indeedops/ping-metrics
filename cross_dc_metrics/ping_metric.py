@@ -101,7 +101,7 @@ class PingMetric(object):
         return ['testping_ip:' + ip, 'testping_name:' + name,
                 'origin:' + self.origin]
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
     parser.add_argument('-s', '--silent', help="supress output to stdout",
         action='store_false')
@@ -118,3 +118,6 @@ if __name__ == '__main__':
     # Start the app
     ping_metric = PingMetric(pool, **vars(args))
     ping_metric.run()
+
+if __name__ == '__main__':
+    main()
