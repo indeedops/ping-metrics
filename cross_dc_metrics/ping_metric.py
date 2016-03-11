@@ -1,4 +1,4 @@
-#!/opt/datadog-agent/embedded/bin/python
+#!/usr/bin/env python
 #
 # Original code was taken from
 # https://gist.github.com/nambrosch/13679710eca4a268f775
