@@ -111,7 +111,7 @@ def main():
     try:
         config.read('/etc/cross_dc_metrics/config.ini')
     except ImportError:
-        config.read('config.ini')
+        config.read('../config.ini')
     pool = []
     for name, hostname in config.items('Pool'):
         pool.append([name, hostname])
