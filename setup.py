@@ -19,9 +19,6 @@ setup(name='cross-dc-metrics',
     packages=['cross_dc_metrics'],
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        'datadog-agent',
-    ],
     entry_points={
         'console_scripts': [
             'cross_dc_metrics=cross_dc_metrics.__main__:main',
