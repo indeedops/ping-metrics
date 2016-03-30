@@ -77,16 +77,16 @@ class PingMetric(object):
                     and len(max) > 0 and len(jitter) > 0 and len(loss) > 0:
                 if self.silent:
                     print ip, min, avg, max, jitter, loss
-                statsd.gauge('testping.min', min, tags=self._tags(ip, name))
-                statsd.gauge('testping.max', max, tags=self._tags(ip, name))
-                statsd.gauge('testping.avg', avg, tags=self._tags(ip, name))
-                statsd.gauge('testping.jitter', jitter, tags=self._tags(ip,
+                statsd.gauge('pingtest.min', min, tags=self._tags(ip, name))
+                statsd.gauge('pingtest.max', max, tags=self._tags(ip, name))
+                statsd.gauge('pingtest.avg', avg, tags=self._tags(ip, name))
+                statsd.gauge('pingtest.jitter', jitter, tags=self._tags(ip,
                                                                        name))
-                statsd.gauge('testping.loss', loss, tags=self._tags(ip, name))
+                statsd.gauge('pingtest.loss', loss, tags=self._tags(ip, name))
             else:
                 if self.silent:
                     print 'no data for', ip
-                statsd.gauge('testping.loss', '100', tags=self._tags(ip, name))
+                statsd.gauge('pingtest.loss', '100', tags=self._tags(ip, name))
 
 
     def _tags(self, ip, name):
@@ -98,7 +98,7 @@ class PingMetric(object):
         :param name: Friendly name of the endpoint
         :type name: str
         """
-        return ['testping_ip:' + ip, 'testping_name:' + name,
+        return ['pingtest_ip:' + ip, 'pingtest_name:' + name,
                 'origin:' + self.origin]
 
 def main():
