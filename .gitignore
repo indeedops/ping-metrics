@@ -1,0 +1,3 @@
+build/
+cross_dc_metrics.egg-info/
+.DS_Store
