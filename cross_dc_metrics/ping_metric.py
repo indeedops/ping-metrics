@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-#
-# Original code was taken from
-# https://gist.github.com/nambrosch/13679710eca4a268f775
-#
 
 try:
     from statsd import statsd
@@ -11,82 +7,77 @@ except ImportError:
 
 import ConfigParser
 import argparse
-import multiprocessing
+import logging
 import socket
 import subprocess
+
+logging.basicConfig()
+logger = logging.getLogger('Cross DC Metrics')
 
 
 class PingMetric(object):
     """
     Class to ping given pool of hosts and emit metrics to statsd (DataDog)
     """
-    def __init__(self, pool, silent=True):
+    def __init__(self, pool):
+        """
+        :param pool: Pool of servers to ping
+        :type pool: dict
+        """
         self.origin = socket.gethostname()
         self.pool = pool
-        self.silent = silent
 
     def run(self):
         """
         This function starts the main loop.
         """
-        jobs = []
-        for i in self.pool:
-            p = multiprocessing.Process(target=self._worker, args=(i[0],i[1]))
-            jobs.append(p)
-            p.start()
-            if self.silent:
-                print 'thread started for: ' + i[0] + ' (' + i[1] + ')'
-
-    def _worker(self, name, ip):
-        """
-        One worker will spawn per-ip.
-
-        :param name: Friendly name of the host
-        :type name: str
-        :param ip: IP address or the hostname of the ping endpoint
-        :type ip: str
-        """
-        p = multiprocessing.current_process()
-
+        # Construct an oping argument
+        destinations = [ip for ip in self.pool]
         while 1:
             try:
-                var = subprocess.check_output('ping -q -c 5 -t 30 ' + ip,
-                                              shell=True).splitlines(True)
+                var = subprocess.check_output(['fping', '-qC5'] + destinations,
+                    stderr=subprocess.STDOUT)
             except KeyboardInterrupt:
-                if self.silent:
-                    print 'died'
+                logger.warning('Process was interrupted from keyboard')
                 return 0
-            except:
-                (var, min, avg, max, jitter, loss) = ('', '', '', '', '', '')
-
-            for line in var:
-                if "round-trip" in line or "rtt" in line:
-                    split = line.replace('/',' ').split()
-                    (min, avg, max, jitter) = (split[6], split[7], split[8],
-                                               split[9])
-
-                elif " packets received, " in line:
-                    split = line.replace('%','').split()
-                    loss = split[6]
-
-                elif " received, " in line:
-                    split = line.replace('%','').split()
-                    loss = split[5]
-
-            if len(var) > 0 and len(min) > 0 and len(avg) > 0 \
-                    and len(max) > 0 and len(jitter) > 0 and len(loss) > 0:
-                if self.silent:
-                    print ip, min, avg, max, jitter, loss
-                statsd.gauge('pingtest.min', min, tags=self._tags(ip, name))
-                statsd.gauge('pingtest.max', max, tags=self._tags(ip, name))
-                statsd.gauge('pingtest.avg', avg, tags=self._tags(ip, name))
-                statsd.gauge('pingtest.jitter', jitter, tags=self._tags(ip,
-                                                                       name))
-                statsd.gauge('pingtest.loss', loss, tags=self._tags(ip, name))
-            else:
-                if self.silent:
-                    print 'no data for', ip
-                statsd.gauge('pingtest.loss', '100', tags=self._tags(ip, name))
+            except subprocess.CalledProcessError as e:
+                # We don't care if fping exited with non zero exit code, but
+                # we need its output
+                var = e.output
+            except OSError:
+                logger.exception('Do you have fping installed?')
+                raise
+            data = (line.split() for line in var.splitlines())
+            for record in data:
+                ip, name = record[0], self.pool[record[0]]
+                logger.debug('Preparing data for %s, %s', name, ip)
+                values = [float(value) if value != '-' else 0
+                    for value in record[2:]]
+                positive_values = filter(lambda x: x > 0, values)
+                minimum = min(positive_values) if positive_values else 0
+                maximum = max(values)
+                average = sum(values) / len(positive_values) \
+                    if positive_values else 0
+                jitter = sum(abs(values[i] - values[i-1])
+                    for i in xrange(1, len(values))) / (len(values) - 1)
+                loss = sum(100/len(values) for x in values if x == 0)
+                logger.debug('Raw values for %s: %s', ip, values)
+                logger.debug('Parsed values for %s: (min, max, avg, jtr, los)'
+                    '%s, %s, %s, %s, %s', ip, minimum, maximum, average,
+                    jitter, loss)
+                try:
+                    statsd.gauge('pingtest.min', minimum,
+                        tags=self._tags(ip, name))
+                    statsd.gauge('pingtest.max', maximum,
+                        tags=self._tags(ip, name))
+                    statsd.gauge('pingtest.avg', average,
+                        tags=self._tags(ip, name))
+                    statsd.gauge('pingtest.jitter', jitter,
+                        tags=self._tags(ip, name))
+                    statsd.gauge('pingtest.loss', loss, tags=self._tags(ip, name))
+                except AttributeError as e:
+                    # Dogstatsd sometimes fails to call get_socket()
+                    logger.warning('Statsd error: %s', e)
 
 
     def _tags(self, ip, name):
@@ -103,17 +94,27 @@ class PingMetric(object):
 
 def main():
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
-    parser.add_argument('-s', '--silent', help="supress output to stdout",
-        action='store_false')
+    parser.add_argument('-v', '--verbosity', help="Increase the verbosity",
+        action='count', default=0)
     args = parser.parse_args()
+    # Configure the logging
+    if args.verbosity >= 3:
+        logger.setLevel(logging.DEBUG)
+    elif args.verbosity >= 1:
+        logger.setLevel(logging.WARNING)
+    else:
+        logger.setLevel(logging.ERROR)
     # Read the config file and get the pool of servers
     config = ConfigParser.ConfigParser()
     config.read('/etc/cross_dc_metrics/config.ini')
-    pool = []
+    pool = {}
     for name, hostname in config.items('Pool'):
-        pool.append([name, hostname])
+        if hostname in pool:
+            logger.warning('Duplicate host entry in config file')
+        pool[hostname] = name
+    logger.debug('Pool generated: %s', pool)
     # Start the app
-    ping_metric = PingMetric(pool, **vars(args))
+    ping_metric = PingMetric(pool)
     ping_metric.run()
 
 if __name__ == '__main__':
