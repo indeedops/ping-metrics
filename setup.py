@@ -10,12 +10,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='cross-dc-metrics',
-    version='0.1',
+    version='1.1',
     description='Emit cross datacenter metrics to Data Dog or statsd',
     long_description=long_description,
     author='Said Babayev',
     author_email='said@indeed.com',
-    url='',
+    url='https://github.com/indeedops/ping-metrics',
     packages=['cross_dc_metrics'],
     include_package_data=True,
     zip_safe=False,
