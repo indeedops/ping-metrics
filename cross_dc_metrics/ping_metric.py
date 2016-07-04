@@ -24,7 +24,7 @@ class PingMetric(object):
         self.origin = socket.gethostname()
         self.pool = pool
         self.silent = silent
-    
+
     def run(self):
         """
         This function starts the main loop.
@@ -36,21 +36,21 @@ class PingMetric(object):
             p.start()
             if self.silent:
                 print 'thread started for: ' + i[0] + ' (' + i[1] + ')'
-    
+
     def _worker(self, name, ip):
         """
         One worker will spawn per-ip.
-        
+
         :param name: Friendly name of the host
         :type name: str
         :param ip: IP address or the hostname of the ping endpoint
         :type ip: str
         """
         p = multiprocessing.current_process()
-    
+
         while 1:
             try:
-                var = subprocess.check_output('ping -q -c 5 -t 20 ' + ip,
+                var = subprocess.check_output('ping -q -c 5 -t 30 ' + ip,
                                               shell=True).splitlines(True)
             except KeyboardInterrupt:
                 if self.silent:
@@ -58,21 +58,21 @@ class PingMetric(object):
                 return 0
             except:
                 (var, min, avg, max, jitter, loss) = ('', '', '', '', '', '')
-    
+
             for line in var:
                 if "round-trip" in line or "rtt" in line:
                     split = line.replace('/',' ').split()
                     (min, avg, max, jitter) = (split[6], split[7], split[8],
                                                split[9])
-    
+
                 elif " packets received, " in line:
                     split = line.replace('%','').split()
                     loss = split[6]
-    
+
                 elif " received, " in line:
                     split = line.replace('%','').split()
                     loss = split[5]
-    
+
             if len(var) > 0 and len(min) > 0 and len(avg) > 0 \
                     and len(max) > 0 and len(jitter) > 0 and len(loss) > 0:
                 if self.silent:
@@ -92,7 +92,7 @@ class PingMetric(object):
     def _tags(self, ip, name):
         """
         This generates tags to be added to the metric
-        
+
         :param ip: IP or hostname of the endpoint
         :type ip: str
         :param name: Friendly name of the endpoint
