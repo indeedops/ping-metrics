@@ -49,7 +49,12 @@ class PingMetric(object):
                 raise
             data = (line.split() for line in var.splitlines())
             for record in data:
-                ip, name = record[0], self.pool[record[0]]
+                try:
+                    ip, name = record[0], self.pool[record[0]]
+                except KeyError:
+                    # Sometimes fping returns additional errors
+                    logger.debug('fping message: %s', ' '.join(record))
+                    continue
                 logger.debug('Preparing data for %s, %s', name, ip)
                 values = [float(value) if value != '-' else 0
                     for value in record[2:]]
