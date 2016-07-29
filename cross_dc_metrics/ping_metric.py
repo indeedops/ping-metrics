@@ -58,6 +58,8 @@ class PingMetric(object):
                 logger.debug('Preparing data for %s, %s', name, ip)
                 values = [float(value) if value != '-' else 0
                     for value in record[2:]]
+                if not values:
+                    continue
                 positive_values = filter(lambda x: x > 0, values)
                 minimum = min(positive_values) if positive_values else 0
                 maximum = max(values)
