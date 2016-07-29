@@ -60,18 +60,23 @@ class PingMetric(object):
                     for value in record[2:]]
                 if not values:
                     continue
-                positive_values = filter(lambda x: x > 0, values)
-                minimum = min(positive_values) if positive_values else 0
-                maximum = max(values)
-                average = sum(values) / len(positive_values) \
-                    if positive_values else 0
-                jitter = sum(abs(values[i] - values[i-1])
-                    for i in xrange(1, len(values))) / (len(values) - 1)
-                loss = sum(100/len(values) for x in values if x == 0)
-                logger.debug('Raw values for %s: %s', ip, values)
-                logger.debug('Parsed values for %s: (min, max, avg, jtr, los)'
-                    '%s, %s, %s, %s, %s', ip, minimum, maximum, average,
-                    jitter, loss)
+                try:
+                    positive_values = filter(lambda x: x > 0, values)
+                    minimum = min(positive_values) if positive_values else 0
+                    maximum = max(values)
+                    average = sum(values) / len(positive_values) \
+                        if positive_values else 0
+                    jitter = sum(abs(values[i] - values[i-1])
+                        for i in xrange(1, len(values))) / (len(values) - 1)
+                    loss = sum(100/len(values) for x in values if x == 0)
+                    logger.debug('Raw values for %s: %s', ip, values)
+                    logger.debug('Parsed values for %s: (min, max, avg, jtr, los)'
+                        '%s, %s, %s, %s, %s', ip, minimum, maximum, average,
+                        jitter, loss)
+                except Exception as e:
+                    logger.warning('Exception occurred during calculation: %s',
+                        e)
+                    continue
                 try:
                     statsd.gauge('pingtest.min', minimum,
                         tags=self._tags(ip, name))
