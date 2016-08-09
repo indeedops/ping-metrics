@@ -56,9 +56,14 @@ class PingMetric(object):
                     logger.debug('fping message: %s', ' '.join(record))
                     continue
                 logger.debug('Preparing data for %s, %s', name, ip)
-                values = [float(value) if value != '-' else 0
-                    for value in record[2:]]
-                if not values:
+                try:
+                    values = [float(value) if value != '-' else 0
+                        for value in record[2:]]
+                    if not values:
+                        continue
+                except Exception as e:
+                    logger.warning('Exception occurred during value unpack: %s',
+                        e)
                     continue
                 try:
                     positive_values = filter(lambda x: x > 0, values)
