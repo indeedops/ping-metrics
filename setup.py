@@ -10,7 +10,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='cross-dc-metrics',
-    version='1.1',
+    version='1.4',
     description='Emit cross datacenter metrics to Data Dog or statsd',
     long_description=long_description,
     author='Said Babayev',
