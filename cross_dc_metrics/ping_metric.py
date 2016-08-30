@@ -25,7 +25,6 @@ class PingMetric(object):
         :type pool: dict
         """
         self.origin = socket.gethostname()
-        self.dc = self.origin.split('-')[0]
         self.pool = pool
 
     def run(self):
