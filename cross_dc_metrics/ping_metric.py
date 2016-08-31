@@ -107,8 +107,10 @@ class PingMetric(object):
         :type name: str
         """
         dc = name.split('-')[0]
-        if dc in ('tst', 'stg'):
+        if dc == 'tst':
             dc = 'qa'
+        elif dc == 'stg':
+            dc = 'stage'
         try:
             address = socket.gethostbyname(ip)
             target_type = 'private' if address.startswith('10.') else 'public'
