@@ -101,13 +101,25 @@ class PingMetric(object):
         """
         This generates tags to be added to the metric
 
-        :param ip: IP or hostname of the endpoint
+        :param ip: IP or hostname of an endpoint
         :type ip: str
-        :param name: Friendly name of the endpoint
+        :param name: Friendly name of an endpoint
         :type name: str
         """
+        dc = name.split('-')[0]
+        if dc == 'tst':
+            dc = 'qa'
+        elif dc == 'stg':
+            dc = 'stage'
+        try:
+            address = socket.gethostbyname(ip)
+            target_type = 'private' if address.startswith('10.') else 'public'
+        except:
+            target_type = 'unknown'
         return ['pingtest_ip:' + ip, 'pingtest_name:' + name,
-                'origin:' + self.origin]
+                'origin:' + self.origin, 'target_dc:' + dc,
+                'target_type:' + target_type]
+
 
 def main():
     parser = argparse.ArgumentParser(description='Ping metrics emitter')
